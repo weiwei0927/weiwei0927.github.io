@@ -54,15 +54,10 @@
             <div class="bg-warning p-4 rounded">
                 <b>身分證字號尾數單雙號分流機制：</b> 
                 <p>單號星期一、三、五；雙號星期二、四、六；週日皆可購買。</p>
-                <div class="dropdown">
-                    <button class="btn btn-info dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                        縣市
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                      <li><a class="dropdown-item" href="#">台北市</a></li>
-                      <li><a class="dropdown-item" href="#">新北市</a></li>
-                    </ul>
-                </div>
+                <select class="form-select form-select-lg mb-3" aria-label=".form-select-lg example" v-model="citySelected">
+                    <option selected value="clear">請選擇縣市</option>
+                    <option v-for="item in cityArray" :value="item.countyname">{{ item.countyname }}</option>
+                </select>
             </div>
             <div class='rg-container'>
                 <div calss="">
@@ -80,7 +75,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class='' v-for="(hospital, index) in openData">
+                        <tr class='' v-for="(hospital, index) in filterData">
                             <td class='text ' data-title='院所'>{{ hospital.name }}</td>
                             <td class='text ' data-title='地址'>{{ hospital.address }}</td>
                             <td class='text ' data-title='電話'>{{ hospital.phone }}</td>
@@ -98,25 +93,35 @@
     Vue.createApp({
         data: function() {
             return{
-               openData: []
+               openData: [],
+               filterData: [],
+               citySelected: 'clear',
+               cityArray: JSON.parse('[{"countyname": "臺北市"},{"countyname": "臺中市"},{"countyname": "基隆市"},{"countyname": "臺南市"},{"countyname": "高雄市"},{"countyname": "新北市"},{"countyname": "宜蘭縣"},{"countyname": "桃園市"},{"countyname": "嘉義市"},{"countyname": "新竹縣"},{"countyname": "苗栗縣"},{"countyname": "南投縣"},{"countyname": "彰化縣"},{"countyname": "新竹市"},{"countyname": "雲林縣"},{"countyname": "嘉義縣"},{"countyname": "屏東縣"},{"countyname": "花蓮縣"},{"countyname": "臺東縣"},{"countyname": "金門縣"},{"countyname": "澎湖縣"},{"countyname": "連江縣"}]'),
             }
         },
         methods:{
-            apiData() {
+            Init(){
                 axios.get('https://data.nhi.gov.tw/Datasets/Download.ashx?rid=A21030000I-D03001-001&l=https://data.nhi.gov.tw/resource/Nhi_Fst/Fstdata.csv')
                  .then((res) => {
-                    //  console.log(res.data);
                     const rawData = d3.csvParse(res.data);
                     this.openData = rawData.map(item => ({code:item.醫事機構代碼, name: item.醫事機構名稱, address: item.醫事機構地址,longitude: item.經度, latitude: item.緯度, phone: item.醫事機構電話, type: item.廠牌項目, number: item.快篩試劑截至目前結餘存貨數量, update: item.來源資料時間, memo: item.備註}))
-                    // console.log(dataObject);
-                 })
+                })
                  .catch((err) => alert(err));
-            },
-
+                this.filterData = this.openData;
+            }
         },
         mounted: function() {
-            this.apiData();
+            this.Init();
         },
+        watch: {
+            citySelected: function(newValue, oldValue) {
+                if ( newValue === 'clear') {
+                    this.filterData = this.openData;
+                } else {
+                    this.filterData = this.openData.filter(e => e.address.indexOf(newValue) !== -1);
+                }
+            }
+        }
     }).mount('#app')
 </script>
 </html>
